@@ -61,14 +61,14 @@ public class FlexGroup : MonoBehaviour
         var width = rectTransform.rect.width;
         var minWidthUsed = width * 2 * PaddingHorizontal;
         var ignoredFlexUnits = 0;
-        var orderedElements = flexElements.OrderByDescending(e => e.Flex > 0 ? e.MinWidth/e.Flex : e.MinWidth);
+        var orderedElements = flexElements.OrderByDescending(e => e.Flex > 0 ? e.MinWidth(width)/e.Flex : e.MinWidth(width));
         foreach(var element in orderedElements)
         {
             if (element.Flex == 0 ||
-                (width - minWidthUsed)/(flexAmount - ignoredFlexUnits) * element.Flex <= element.MinWidth
+                (width - minWidthUsed)/(flexAmount - ignoredFlexUnits) * element.Flex <= element.MinWidth(width)
             )
             {
-                minWidthUsed += element.MinWidth;
+                minWidthUsed += element.MinWidth(width);
                 ignoredFlexUnits += element.Flex;
             }
         }
@@ -86,10 +86,10 @@ public class FlexGroup : MonoBehaviour
 
             if (correctedFlexAmount == 0 ||
                 flexElements[i].Flex == 0 ||
-                (width - minWidthUsed)/(flexAmount - ignoredFlexUnits) * flexElements[i].Flex  < flexElements[i].MinWidth
+                (width - minWidthUsed)/(flexAmount - ignoredFlexUnits) * flexElements[i].Flex  < flexElements[i].MinWidth(width)
             )
             {
-                xMax += WidthToPercent(flexElements[i].MinWidth);
+                xMax += WidthToPercent(flexElements[i].MinWidth(width));
             }
             else
             {
@@ -113,14 +113,14 @@ public class FlexGroup : MonoBehaviour
         var height = rectTransform.rect.height;
         var minHeightUsed = height * 2 * PaddingVertical;
         var ignoredFlexUnits = 0;
-        var orderedElements = flexElements.OrderByDescending(e => e.Flex > 0 ? e.MinHeight/e.Flex : e.MinHeight);
+        var orderedElements = flexElements.OrderByDescending(e => e.Flex > 0 ? e.MinHeightUnit/e.Flex : e.MinHeightUnit);
         foreach(var element in orderedElements)
         {
             if (element.Flex == 0 ||
-                ((height - minHeightUsed)/(flexAmount - ignoredFlexUnits)) * element.Flex  <= element.MinHeight
+                ((height - minHeightUsed)/(flexAmount - ignoredFlexUnits)) * element.Flex  <= element.MinHeightUnit
             )
             {
-                minHeightUsed += element.MinHeight;
+                minHeightUsed += element.MinHeightUnit;
                 ignoredFlexUnits += element.Flex;
             }
         }
@@ -138,10 +138,10 @@ public class FlexGroup : MonoBehaviour
 
             if (correctedFlexAmount == 0 ||
                 flexElements[i].Flex == 0 ||
-                (height - minHeightUsed)/(flexAmount - ignoredFlexUnits) * flexElements[i].Flex < flexElements[i].MinHeight
+                (height - minHeightUsed)/(flexAmount - ignoredFlexUnits) * flexElements[i].Flex < flexElements[i].MinHeightUnit
             )
             {
-                yMin -= HeightToPercent(flexElements[i].MinHeight);
+                yMin -= HeightToPercent(flexElements[i].MinHeightUnit);
             }
             else
             {
