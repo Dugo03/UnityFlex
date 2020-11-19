@@ -6,25 +6,57 @@ using UnityEngine;
 
 public class FlexGroup : MonoBehaviour
 {
-    public enum FlexDirectionOption
+    [SerializeField]
+    public FlexDirection _flexDirection;
+    public FlexDirection FlexDirection => _flexDirection;
+
+    [SerializeField]
+    public AlignmentType _itemAlignment;
+    public AlignmentType ItemAlignment => _itemAlignment;
+
+    [SerializeField]
+    private UnitType _paddingHorizontalType;
+    public UnitType PaddingHorizontalType => _paddingHorizontalType;
+
+    [SerializeField]
+    [Range(0.0f, 0.5f)]
+    private float _paddingHorizontalPercent;
+    private float PaddingHorizontalPercent => _paddingHorizontalPercent;
+
+    [SerializeField]
+    [Min(0)]
+    private int _paddingHorizontalUnit;
+    private int PaddingHorizontalUnit => _paddingHorizontalUnit;
+
+    [SerializeField]
+    private UnitType _paddingVerticalType;
+    public UnitType PaddingVerticalType => _paddingVerticalType;
+
+    [SerializeField]
+    [Range(0.0f, 0.5f)]
+    private float _paddingVerticalPercent;
+    private float PaddingVerticalPercent => _paddingVerticalPercent;
+
+    [SerializeField]
+    [Min(0)]
+    private int _paddingVerticalUnit;
+    private int PaddingVerticalUnit => _paddingVerticalUnit;
+
+
+    private float PaddingHorizontal
     {
-        row = 1,
-        column = 2
+        get
+        {
+            return PaddingHorizontalType == UnitType.percent ? PaddingHorizontalPercent : PaddingHorizontalUnit / rectTransform.rect.width;
+        }
     }
-
-    [SerializeField]
-    public FlexDirectionOption _flexDirection;
-    public FlexDirectionOption FlexDirection => _flexDirection;
-
-    [SerializeField]
-    [Range(0.0f, 1.0f)]
-    private float _paddingHorizontal;
-    private float PaddingHorizontal => _paddingHorizontal;
-
-    [SerializeField]
-    [Range(0.0f, 1.0f)]
-    private float _paddingVertical;
-    private float PaddingVertical => _paddingVertical;
+    private float PaddingVertical
+    {
+        get
+        {
+            return PaddingVerticalType == UnitType.percent ? PaddingVerticalPercent : PaddingVerticalUnit / rectTransform.rect.height;
+        }
+    }
 
     private RectTransform rectTransform;
 
@@ -49,7 +81,7 @@ public class FlexGroup : MonoBehaviour
 
         var flexAmount = flexElements.Sum(element => element.Flex);
 
-        if (FlexDirection == FlexDirectionOption.row)
+        if (FlexDirection == FlexDirection.row)
             SetupRow(flexElements, flexAmount);
         else
             SetupColumn(flexElements, flexAmount);
@@ -59,6 +91,7 @@ public class FlexGroup : MonoBehaviour
     private void SetupRow(List<FlexElement> flexElements, int flexAmount)
     {
         var width = rectTransform.rect.width;
+        var height = rectTransform.rect.height;
         var minWidthUsed = width * 2 * PaddingHorizontal;
         var ignoredFlexUnits = 0;
         var orderedElements = flexElements.OrderByDescending(e => e.Flex > 0 ? e.MinWidth(width)/e.Flex : e.MinWidth(width));
@@ -81,8 +114,7 @@ public class FlexGroup : MonoBehaviour
             var elementRectTransform = flexElements[i].GetComponent<RectTransform>();
 
             var xMax = xMin;
-            var yMin = PaddingVertical;
-            var yMax = 1 - PaddingVertical;
+            var posY = GetYPos(flexElements[i].MinHeight(height));
 
             if (correctedFlexAmount == 0 ||
                 flexElements[i].Flex == 0 ||
@@ -96,8 +128,8 @@ public class FlexGroup : MonoBehaviour
                 xMax += (1 - WidthToPercent(minWidthUsed))/correctedFlexAmount * flexElements[i].Flex;
             }
 
-            var posMin = new Vector2(xMin, yMin);
-            var posMax = new Vector2(xMax, yMax);
+            var posMin = new Vector2(xMin, posY[0]);
+            var posMax = new Vector2(xMax, posY[1]);
             xMin = xMax;
 
             elementRectTransform.anchorMin = posMin;
@@ -108,19 +140,47 @@ public class FlexGroup : MonoBehaviour
         }
     }
 
+    private Vector2 GetYPos(float minHeight)
+    {
+        var height = rectTransform.rect.height;
+
+        switch (ItemAlignment)
+        {
+            case AlignmentType.start:
+                return new Vector2(
+                    minHeight / height > 1 - 2 * PaddingVertical ? (1 - PaddingVertical) - minHeight / height : PaddingVertical,
+                    1 - PaddingVertical
+                );
+            case AlignmentType.center:
+                return new Vector2(
+                    minHeight / height > 1 - 2 * PaddingVertical ? 0.5f - (minHeight / height)/2 : PaddingVertical,
+                    minHeight / height > 1 - 2 * PaddingVertical ? 0.5f + (minHeight / height)/2 : 1 - PaddingVertical
+                );
+            case AlignmentType.end:
+                return new Vector2(
+                    PaddingVertical,
+                    minHeight / height > 1 - 2 * PaddingVertical ? PaddingVertical + minHeight / height : 1 - PaddingVertical
+                );
+            default:
+                throw new System.Exception("Unidentified alignment");
+
+        }
+    }
+
     private void SetupColumn(List<FlexElement> flexElements, int flexAmount)
     {
+        var width = rectTransform.rect.width;
         var height = rectTransform.rect.height;
         var minHeightUsed = height * 2 * PaddingVertical;
         var ignoredFlexUnits = 0;
-        var orderedElements = flexElements.OrderByDescending(e => e.Flex > 0 ? e.MinHeightUnit/e.Flex : e.MinHeightUnit);
+        var orderedElements = flexElements.OrderByDescending(e => e.Flex > 0 ? e.MinHeight (height)/ e.Flex : e.MinHeight(height));
         foreach(var element in orderedElements)
         {
             if (element.Flex == 0 ||
-                ((height - minHeightUsed)/(flexAmount - ignoredFlexUnits)) * element.Flex  <= element.MinHeightUnit
+                ((height - minHeightUsed)/(flexAmount - ignoredFlexUnits)) * element.Flex  <= element.MinHeight(height)
             )
             {
-                minHeightUsed += element.MinHeightUnit;
+                minHeightUsed += element.MinHeight(height);
                 ignoredFlexUnits += element.Flex;
             }
         }
@@ -132,24 +192,25 @@ public class FlexGroup : MonoBehaviour
         {
             var elementRectTransform = flexElements[i].GetComponent<RectTransform>();
 
+            var xPos = GetXPos(flexElements[i].MinWidth(width));
             var xMin = PaddingHorizontal;
-            var xMax = 1 - PaddingHorizontal;
+            var xMax = flexElements[i].MinWidth(width) / width > 1 - 2 * PaddingHorizontal  ? xMin + flexElements[i].MinWidth(width) / width : 1 - PaddingHorizontal;
             var yMin = yMax;
 
             if (correctedFlexAmount == 0 ||
                 flexElements[i].Flex == 0 ||
-                (height - minHeightUsed)/(flexAmount - ignoredFlexUnits) * flexElements[i].Flex < flexElements[i].MinHeightUnit
+                (height - minHeightUsed)/(flexAmount - ignoredFlexUnits) * flexElements[i].Flex < flexElements[i].MinHeight(height)
             )
             {
-                yMin -= HeightToPercent(flexElements[i].MinHeightUnit);
+                yMin -= HeightToPercent(flexElements[i].MinHeight(height));
             }
             else
             {
                 yMin -= (1 - HeightToPercent(minHeightUsed))/correctedFlexAmount * flexElements[i].Flex;
             }
 
-            var posMin = new Vector2(xMin, yMin);
-            var posMax = new Vector2(xMax, yMax);
+            var posMin = new Vector2(xPos[0], yMin);
+            var posMax = new Vector2(xPos[1], yMax);
             yMax = yMin;
 
             elementRectTransform.anchorMin = posMin;
@@ -157,6 +218,33 @@ public class FlexGroup : MonoBehaviour
 
             elementRectTransform.offsetMax = Vector2.zero;
             elementRectTransform.offsetMin = Vector2.zero;
+        }
+    }
+
+    private Vector2 GetXPos(float minWidth)
+    {
+        var width = rectTransform.rect.width;
+
+        switch (ItemAlignment)
+        {
+            case AlignmentType.start:
+                return new Vector2(
+                    PaddingHorizontal,
+                    minWidth / width > 1 - 2 * PaddingHorizontal ? PaddingHorizontal + minWidth / width : 1 - PaddingHorizontal
+                );
+            case AlignmentType.center:
+                return new Vector2(
+                    minWidth / width > 1 - 2 * PaddingHorizontal ? 0.5f - (minWidth / width) / 2 : PaddingHorizontal,
+                    minWidth / width > 1 - 2 * PaddingHorizontal ? 0.5f + (minWidth / width) / 2 : 1 - PaddingHorizontal
+                );
+            case AlignmentType.end:
+                return new Vector2(
+                    minWidth / width > 1 - 2 * PaddingHorizontal ? (1 - PaddingHorizontal) - minWidth / width : PaddingHorizontal,
+                    1 - PaddingHorizontal
+                );
+            default:
+                throw new System.Exception("Unidentified alignment");
+
         }
     }
 

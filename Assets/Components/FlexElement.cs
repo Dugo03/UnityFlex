@@ -50,4 +50,12 @@ public class FlexElement : MonoBehaviour
         else
             return MinWidthUnit;
     }
+
+    public float MinHeight(float parentHeight)
+    {
+        if (MinHeightType == UnitType.percent)
+            return parentHeight * MinHeightPercent;
+        else
+            return MinHeightUnit;
+    }
 }

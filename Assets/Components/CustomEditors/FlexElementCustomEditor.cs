@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using System.ComponentModel;
+using System;
+using System.Reflection;
 
 [CustomEditor(typeof(FlexElement))]
 public class FlexElementCustomEditor : UnityEditor.Editor
@@ -14,23 +17,6 @@ public class FlexElementCustomEditor : UnityEditor.Editor
     private SerializedProperty MinHeightType { get; set; }
     private SerializedProperty MinHeightUnit { get; set; }
     private SerializedProperty MinHeightPercent { get; set; }
-
-    public static void DrawUnitTypeToogle(SerializedProperty property)
-    {
-        var position = EditorGUILayout.GetControlRect(hasLabel:true);
-        var propertyLabel = EditorGUI.BeginProperty(position, null, property);
-        var insideRect = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), propertyLabel);
-
-        var buttonsText = new GUIContent[]{
-            new GUIContent("%"),
-            new GUIContent("px"),
-        };
-
-        property.enumDisplayNames.Select(x => new GUIContent(x)).ToArray();
-
-        property.enumValueIndex = GUI.Toolbar(insideRect, property.enumValueIndex, buttonsText, EditorStyles.miniButton, GUI.ToolbarButtonSize.Fixed);
-        EditorGUI.EndProperty();
-    }
 
     void OnEnable()
     {
@@ -61,7 +47,7 @@ public class FlexElementCustomEditor : UnityEditor.Editor
 
         EditorGUILayout.Space();
 
-        DrawUnitTypeToogle(MinWidthType);
+        this.DrawEnumAsButtonToggle<UnitType>(MinWidthType);
         if (MinWidthType.enumValueIndex == (int)UnitType.percent)
             EditorGUILayout.PropertyField(MinWidthPercent, new GUIContent("Min Width"));
         else
@@ -70,7 +56,7 @@ public class FlexElementCustomEditor : UnityEditor.Editor
 
         EditorGUILayout.Space();
 
-        DrawUnitTypeToogle(MinHeightType);
+        this.DrawEnumAsButtonToggle<UnitType>(MinHeightType);
         if (MinHeightType.enumValueIndex == (int)UnitType.percent)
             EditorGUILayout.PropertyField(MinHeightPercent, new GUIContent("Min Height"));
         else
